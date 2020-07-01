@@ -20,14 +20,25 @@ def parse_date(d_str, splitter='-'):
                          int(d_parts[2]))
     return date_out
 
-def find_prior_date(x, date_list, filter_rows):
-    w=date_list<x
-    w=w&filter_rows
+def find_prior_date(x, data_df, date_col, filter_rows):
+    temp_df=data_df.copy()
+    for f in filter_rows.keys():
+        w=temp_df[f]==filter_rows[f]
+        temp_df=temp_df.loc[w,:]
+    date_list=temp_df[date_col]
+    w=date_list<x    
+    if sum(w)<1:
+        return None
     last_date=max(date_list[w])
     return last_date
+def prior_date_finder(row, data_df):
+    ticker=row['Stock']
+    date=row['date']
+    prior_date=find_prior_date(date, data_df, 'date', {'Stock':ticker})
+    return prior_date
 
 data_df['date']=data_df['timestamp'].apply(parse_date)
-data_df['date_tm1']=
+data_df['date_tm1']=data_df.apply(prior_date_finder, axis=1, args=[data_df])
 #compute returns
 #volatility
 
@@ -43,3 +54,6 @@ data_df['date_tm1']=
 
 
 
+
+
+# %%
