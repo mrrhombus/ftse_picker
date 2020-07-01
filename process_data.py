@@ -69,10 +69,10 @@ temp_df=temp_df.rename(columns={'close':'close_tp1','date_tm1':'date', 'date':'d
 data_df=pd.merge(data_df, temp_df, how='inner',on='date')
 data_df['return_nextDay']=data_df.apply(calc_return, axis=1, args=['close_tp1', 'close'])
 
-temp_df=data_df.loc[:,['date','date_tm1','close']]
-temp_df=temp_df.rename(columns={'close':'close_tp1','date_tm1':'date', 'date':'date_tp1'})
-data_df=pd.merge(data_df, temp_df, how='inner',on='date')
-data_df['return_nextDay']=data_df.apply(calc_return, axis=1, args=['close_tp1', 'close'])
+temp_df=data_df.loc[:,['date','close']]
+temp_df=temp_df.rename(columns={'close':'close_tm1','date':'date_tm1'})
+data_df=pd.merge(data_df, temp_df, how='inner',on='date_tm1')
+data_df['return_backwards']=data_df.apply(calc_return, axis=1, args=['close', 'close_tm1'])
 
 data_df['day_of_week']=data_df['date'].apply(lambda x: x.weekday())
 data_df['month']=data_df['date'].apply(lambda x: x.month)
@@ -91,10 +91,30 @@ for t in np.arange(1,21,1):
         base_date='date'
     new_date='date_tm{0}'.format(t)
     data_df[new_date]=data_df.apply(prior_date_finder, axis=1, args=[base_date, data_df])
-    temp_df=data_df.loc[:,['date','close']]
-    temp_df=temp_df.rename(columns={'close':'close_tm{0}'.format(t)})
+    temp_df=data_df.loc[:,['date','return_backwards']]
+    temp_df=temp_df.rename(columns={'return_backwards':'return_backwards_tm{0}'.format(t)})
     data_df=pd.merge(data_df, temp_df, how='inner',on='date')
-    
+
+#%%
+
+keep_cols=['Stock','return_nextDay', 
+           'return_backwards', 'day_of_week', 'month', 'year', 'day_of_month',
+           'high_low_gap', 'high_low_gap_percentile', 'volume_percentile',
+           'return_backwards_tm1',  'return_backwards_tm2', 'return_backwards_tm3', 
+           'return_backwards_tm4', 'return_backwards_tm5', 'return_backwards_tm6', 
+           'return_backwards_tm7',  'return_backwards_tm8', 'return_backwards_tm9',  
+           'return_backwards_tm10', 'return_backwards_tm11', 'return_backwards_tm12',  
+           'return_backwards_tm13', 'return_backwards_tm14', 'return_backwards_tm15',  
+           'return_backwards_tm16', 'return_backwards_tm17', 'return_backwards_tm18',  
+           'return_backwards_tm19','return_backwards_tm20']    
+data_df=data_df.loc[:,keep_cols]
+
+x_cols=[c for c in data_df.columns if s !='return_nextDay']
+y_cols='return_nextDay'
+x_data=data_df.loc[:,x_cols]
+y_data=data_df[y_cols]
+
+
 #compute returns
 #volatility
 
