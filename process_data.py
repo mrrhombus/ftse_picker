@@ -7,11 +7,15 @@ import datetime
 import numpy as np
 import math
 import time
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
 
 #%%
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-data_filepath=os.path.join(ROOT_DIR,'timesseriesdata.csv')
+data_folder=os.path.join(ROOT_DIR, 'data')
+data_filepath=os.path.join(data_folder,'timesseriesdata.csv')
 
 data_df_src=pd.read_csv(data_filepath)
 #%%
@@ -108,6 +112,22 @@ def add_lag_returns(data_df):
         new_col='return_backwards_tm{0}'.format(t)
         data_df=lag_col(data_df, 'date',base_col, -1*t,new_col)        
     return data_df
+
+def replace_catcols_oh(x_df, oh_cols):
+    my_oh=OneHotEncoder(handle_unknown='ignore')
+
+    for c in oh_cols:   
+        data_mat=np.matrix(x_df[c])
+        my_oh.fit(data_mat.transpose())
+        e=my_oh.transform(data_mat.transpose())
+        e=e.todense()
+        new_col_names=my_oh.get_feature_names([c])
+        x_df=x_df.drop(columns=(c))
+
+        for cn in range(new_col_names.__len__()):
+            new_col_name=new_col_names[cn]
+            x_df[new_col_name]=e[:,cn]
+    return x_df
 #%%
     
 #compute returns
@@ -148,13 +168,15 @@ for ticker in tickers:
     except:
         print('failed to process {0}'.format(ticker))
 
-data_df_processed.to_csv(os.path.join(ROOT_DIR,'processed_data.csv'))
+data_df_processed.to_csv(os.path.join(data_folder,'processed_data.csv'))
 
 
 
 
 #%%
-data_df_processed=pd.read_csv(os.path.join(ROOT_DIR,'processed_data.csv'))
+data_df_processed=pd.read_csv(os.path.join(data_folder,'processed_data.csv'))
+
+
 
 #%%
 keep_cols=['Stock','return_nextDay', 
@@ -169,135 +191,41 @@ keep_cols=['Stock','return_nextDay',
            'return_backwards_tm19','return_backwards_tm20']    
 data_df=data_df_processed.loc[:,keep_cols]
 
+#%%
+for c in keep_cols:
+    w=pd.isna(data_df[c])
+    data_df=data_df.loc[-w,:]
+    if sum(w)>0:
+        print('col {0} has {1} na entries'.format(c, sum(w)))
+
+#%%
 x_cols=[c for c in data_df.columns if c !='return_nextDay']
 y_cols='return_nextDay'
 x_data=data_df.loc[:,x_cols]
 y_data=data_df[y_cols]
+
 #%%
 #one hot stock
-from sklearn.preprocessing import OneHotEncoder
-my_oh=OneHotEncoder(handle_unknown='ignore')
-OH_x_train=x_train.copy()
-OH_x_valid=x_valid.copy()
-oh_cols=['Stock']
 
-def replace_catcols_oh(x_df, oh_cols):
-    for c in oh_cols:   
-    data_mat=np.matrix(x_df[c])
-    my_oh.fit(data_mat.transpose())
 
-    transform_data=np.matrix(x_df[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-    OH_x_train=OH_x_train.drop(columns=(c))
+oh_cols=['Stock',
+         'day_of_week', 
+         'month', 
+         'year', 
+         'day_of_month',]
 
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_train[new_col_name]=e[:,cn]
+x_data_oh=replace_catcols_oh(x_data, oh_cols)
 
-    transform_data=np.matrix(x_valid[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-
-    OH_x_valid=OH_x_valid.drop(columns=(c))
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_valid[new_col_name]=e[:,cn]
-
-for c in oh_cols:   
-    data_mat=np.matrix(x_train[c])
-    my_oh.fit(data_mat.transpose())
-
-    transform_data=np.matrix(x_train[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-    OH_x_train=OH_x_train.drop(columns=(c))
-
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_train[new_col_name]=e[:,cn]
-
-    transform_data=np.matrix(x_valid[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-
-    OH_x_valid=OH_x_valid.drop(columns=(c))
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_valid[new_col_name]=e[:,cn]
-        
 #%%
 
-from sklearn.metrics import mean_absolute_error
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
 
-x_train, x_valid, train_y, val_y = train_test_split(x_data, y_data, random_state=1)
-#%%
-#one hot stock
-from sklearn.preprocessing import OneHotEncoder
-my_oh=OneHotEncoder(handle_unknown='ignore')
-OH_x_train=x_train.copy()
-OH_x_valid=x_valid.copy()
-oh_cols=['Stock']
+x_train, x_valid, train_y, val_y = train_test_split(x_data_oh, y_data, random_state=1)
 
-def replace_catcols_oh(x_df, oh_cols):
-    for c in oh_cols:   
-    data_mat=np.matrix(x_train[c])
-    my_oh.fit(data_mat.transpose())
-
-    transform_data=np.matrix(x_train[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-    OH_x_train=OH_x_train.drop(columns=(c))
-
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_train[new_col_name]=e[:,cn]
-
-    transform_data=np.matrix(x_valid[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-
-    OH_x_valid=OH_x_valid.drop(columns=(c))
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_valid[new_col_name]=e[:,cn]
-
-for c in oh_cols:   
-    data_mat=np.matrix(x_train[c])
-    my_oh.fit(data_mat.transpose())
-
-    transform_data=np.matrix(x_train[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-    OH_x_train=OH_x_train.drop(columns=(c))
-
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_train[new_col_name]=e[:,cn]
-
-    transform_data=np.matrix(x_valid[c])
-    e=my_oh.transform(transform_data.transpose())
-    e=e.todense()
-    new_col_names=my_oh.get_feature_names([c])
-
-    OH_x_valid=OH_x_valid.drop(columns=(c))
-    for cn in range(new_col_names.__len__()):
-        new_col_name=new_col_names[cn]
-        OH_x_valid[new_col_name]=e[:,cn]
 #%%
 # Using best value for max_leaf_nodes
 #test_cols=['day_of_week']
-x_train_test=OH_x_train.copy()
-x_valid_test=OH_x_valid.copy()
+x_train_test=x_train.copy()
+x_valid_test=x_valid.copy()
         
 ftsepicker_model = DecisionTreeRegressor(max_leaf_nodes=100, random_state=1)
 ftsepicker_model.fit(x_train_test, train_y)
@@ -308,12 +236,40 @@ print("Train MAE for best value of max_leaf_nodes: {:,.5f}".format(100*train_mae
 val_predictions = ftsepicker_model.predict(x_valid_test)
 val_mae = mean_absolute_error(val_predictions, val_y)
 print("Validation MAE for best value of max_leaf_nodes: {:,.5f}".format(100*val_mae))
+#%%
+from matplotlib import pyplot as plt
 
-#
+plt.scatter(val_predictions, val_y)
+plt.show()
+#%%
+predict_all=ftsepicker_model.predict(x_data_oh)
+results_analysis=x_data.copy()
+results_analysis['y']=y_data
+results_analysis['y_prediction']=predict_all
+results_analysis['abs_error']=abs(results_analysis['y']-results_analysis['y_prediction'])
+#%%
+summary_error=pd.pivot_table(results_analysis,
+                        values='abs_error',
+                        index='Stock',
+                        aggfunc=np.mean)
+summary_vol=pd.pivot_table(results_analysis,
+                        values='y',
+                        index='Stock',
+                        aggfunc=np.std)
+summary=pd.merge(summary_error, summary_vol, left_index=True, 
+right_index=True)
+
+summary['rel_error']=summary['abs_error']/summary['y']
+summary['Stock']=summary.index
+summary=summary.sort_values('rel_error')
+summary.index=np.arange(summary.shape[0])
+best_fit_stocks=summary.loc[np.arange(50),'Stock']
+
+w=results_analysis['Stock'].isin(best_fit_stocks)
+plt.scatter(results_analysis.loc[w,'y'],
+            results_analysis.loc[w,'y_prediction'])
+
+#%%
+plt.hist(summary['abs_error'])
 
 
-
-
-
-
-# %%
