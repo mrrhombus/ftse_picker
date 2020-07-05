@@ -4,6 +4,8 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 import pandas as pd
+import datetime
+import math
 
 
 def parse_date(d_str, splitter='-'):
@@ -94,6 +96,14 @@ def add_lag_returns(data_df):
         new_col='return_backwards_tm{0}'.format(t)
         data_df=lag_col(data_df, 'date',base_col, -1*t,new_col)        
     return data_df
+
+class ZScoreMapper:
+    def __init__(samples):
+        self.samples
+        return
+    
+    def calc_norm_params():
+        return
 
 def replace_catcols_oh(x_df, oh_cols):
     my_oh=OneHotEncoder(handle_unknown='ignore')

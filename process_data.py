@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import datetime
 import numpy as np
-import math
 import time
 
 
@@ -48,7 +47,7 @@ for ticker in tickers:
         data_df=data_df_src.loc[data_df_src['Stock']==ticker,:]
         batch_size=data_df.shape[0]
         data_df=data_df.copy()
-        data_df['date']=data_df['timestamp'].apply(parse_date)
+        data_df['date']=data_df['timestamp'].apply(ftsepicker_lib.parse_date)
         data_df=ftsepicker_lib.create_date_shift_cols(data_df)
         data_df=ftsepicker_lib.create_forward_and_back_looking_returns(data_df)
         data_df=ftsepicker_lib.add_extra_stats(data_df)
