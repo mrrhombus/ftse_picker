@@ -1,0 +1,8 @@
+ftse350tickers.csv
+data/missingtickers.csv
+data/timesseriesdata_add fails.csv
+data/timesseriesdata.csv
+missingtickers.csv
+timesseriesdata_add fails.csv
+timesseriesdata.csv
+data/**
