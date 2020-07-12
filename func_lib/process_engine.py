@@ -2,34 +2,45 @@
 import pandas as pd
 import requests
 from . import ftsepicker_lib
+from . import model_calibration
+import os
+import time
+import io
 
 class ProcessEngine:
     def __init__(self):
+        self.model=model_calibration.ModelCalibration()
+        self.download_folder=None
+        return None
+
+    def set_download_folder(self, download_folder):
+        self.download_folder=download_folder
+        return
+
+    def write_to_folder(self, df):
+        df.to_csv(os.path.join(self.download_folder, df))
         return
 
     def set_stock_universe(self, stock_list):
         self.stock_universe=stock_list
-        return
+        return None
     
     
     def load_timeseries_data(self, file_path):
-
-        self.timesseries_data=pd.read_csv(data_filepath)
-
-        return
+        self.timesseries_data=pd.read_csv(file_path)
+        return None
     
-    def urlBuilder(self,ticker,  size='full'):
+    def urlBuilder(self,ticker, api_key, size='full'):
         url=r'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={1}&outputsize={2}&apikey={0}&datatype=csv'.format(api_key,ticker, size)
         return url
 
     def download_data(self,api_key, download_size='compact'):
-        api_key=r'3O7TSALOH8TXAHNM'
 
         summary_df=pd.DataFrame()
-        fail_list=[]
+        self.fail_list=[]
         for t in self.stock_universe:
             try:
-                url=urlBuilder(t, api_key, download_size)
+                url=self.urlBuilder(t, api_key, download_size)
                 r=requests.get(url)
                 time.sleep(12)
                 df=pd.read_csv(io.StringIO(r.content.decode('utf-8')))
@@ -38,17 +49,19 @@ class ProcessEngine:
                     summary_df=pd.concat([summary_df, df], axis=0)
                 else:
                     print('failed to download {0}'.format(t))
-                    fail_list.append(t)
+                    print(df)
+                    print(url)
+                    self.fail_list.append(t)
             except:
-                print('failed to download {0}'.format(t))
-                fail_list.append(t)
+                print('error occured {0}'.format(t))
+                self.fail_list.append(t)
             
             self.timesseries_data=summary_df
         return
 
     def process_data(self):
         data_df_processed=pd.DataFrame()
-        ts_data=self.timesseries_data
+        ts_data=self.timesseries_data.copy()
         tickers=ts_data['Stock'].unique()
 
         for ticker in tickers:
@@ -69,11 +82,12 @@ class ProcessEngine:
                 data_df_processed=pd.concat([data_df_processed, data_df],axis=0)
             except:
                 print('failed to process {0}'.format(ticker))
+                print(data_df)
             
             self.processed_dataset=data_df_processed
 
             
-        return
+        return None
     
     def prepare_data_for_model(self, keep_cols, y_col, oh_cols):
         
@@ -82,10 +96,17 @@ class ProcessEngine:
                                                             y_col,
                                                             oh_cols)
         
-        return
+        return None
 
     def train_ml_predictor(self):
-        return
+        self.model.train_and_predict(self.x_data, self.y_data)
+        return None
 
-    def make_predictions(self):
-        return
+    def make_predictions(self, x_data, y_data):
+        if self.model.is_calibrated==False:
+            print('Must train model first')
+            return None
+        
+        predictions=self.model.predict_with_model(x_data)
+
+        return predictions

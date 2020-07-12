@@ -13,60 +13,22 @@ data_folder=os.path.join(ROOT_DIR, 'data')
 data_filepath=os.path.join(data_folder,'timesseriesdata.csv')
 
 sys.path.append(ROOT_DIR)
-from func_lib import ftsepicker_lib
+from func_lib import process_engine
 
-#%%
 
+api_key=r'3O7TSALOH8TXAHNM'
 data_df_src=pd.read_csv(data_filepath)
-
-
-#%%
-    
-#compute returns
-#volatility
-
-#prepare dataset
-#day of week
-#week of year
-#year
-#lag returns (20 days?)
-#get ftse350 return
-
-#external data?
-#inflation data
-
-
 
 tickers=data_df_src['Stock'].unique()
 
-data_df_processed=pd.DataFrame()
+#%%
 
-for ticker in tickers:
-    try:
-        t1=time.time()
-        data_df=data_df_src.loc[data_df_src['Stock']==ticker,:]
-        batch_size=data_df.shape[0]
-        data_df=data_df.copy()
-        data_df['date']=data_df['timestamp'].apply(ftsepicker_lib.parse_date)
-        data_df=ftsepicker_lib.create_date_shift_cols(data_df)
-        data_df=ftsepicker_lib.create_forward_and_back_looking_returns(data_df)
-        data_df=ftsepicker_lib.add_extra_stats(data_df)
-        data_df=ftsepicker_lib.add_lag_returns(data_df)
-        
-        t2=time.time()
-        print('{2} {1} rows complete in {0}'.format((t2-t1),batch_size, ticker))
-        
-        data_df_processed=pd.concat([data_df_processed, data_df],axis=0)
-    except:
-        print('failed to process {0}'.format(ticker))
-
-data_df_processed.to_csv(os.path.join(data_folder,'processed_data.csv'))
-
-
-
+analysis_run=process_engine.ProcessEngine()
+analysis_run.set_stock_universe(['VOD'])
+analysis_run.download_data(api_key, 'full')
+analysis_run.process_data()
 
 #%%
-data_df_processed=pd.read_csv(os.path.join(data_folder,'processed_data.csv'))
 y_col='return_nextDay'
 
 oh_cols=['Stock',
@@ -85,6 +47,14 @@ keep_cols=['Stock','return_nextDay',
            'return_backwards_tm13', 'return_backwards_tm14', 'return_backwards_tm15',  
            'return_backwards_tm16', 'return_backwards_tm17', 'return_backwards_tm18',  
            'return_backwards_tm19','return_backwards_tm20']    
+
+analysis_run.prepare_data_for_model(keep_cols, y_col, oh_cols)
+analysis_run.train_ml_predictor()
+predictions=analysis_run.make_predictions(analysis_run.x_data_oh)
+#%%
+
+#%%
+data_df_processed=pd.read_csv(os.path.join(data_folder,'processed_data.csv'))
 
 
 x_data, x_data_oh, y_data = ftsepicker_lib.prepare_dataset_dectree(data_df_processed,
