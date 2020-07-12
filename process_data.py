@@ -36,8 +36,8 @@ data_df_src=pd.read_csv(data_filepath)
 #inflation data
 
 
+
 tickers=data_df_src['Stock'].unique()
-ticker=tickers[0]
 
 data_df_processed=pd.DataFrame()
 
