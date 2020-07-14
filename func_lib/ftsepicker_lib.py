@@ -123,7 +123,9 @@ def replace_catcols_oh(x_df, oh_cols):
 
 def prepare_dataset_dectree(data_df, keep_cols, y_col, cat_cols, ):
 
-    data_df=data_df.loc[:,keep_cols]
+    drop_cols=[c for c in data_df.columns if c not in keep_cols]
+    data_df=data_df.drop(columns=drop_cols)
+    # data_df=data_df.loc[:,keep_cols]
 
     
     for c in keep_cols:

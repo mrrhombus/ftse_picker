@@ -56,18 +56,18 @@ class ProcessEngine:
                 print('error occured {0}'.format(t))
                 self.fail_list.append(t)
             
-            self.timesseries_data=summary_df
+            self.timeseries_data=summary_df
         return
 
     def process_data(self):
         data_df_processed=pd.DataFrame()
-        ts_data=self.timesseries_data.copy()
+        ts_data=self.timeseries_data.copy()
         tickers=ts_data['Stock'].unique()
 
         for ticker in tickers:
             try:
                 t1=time.time()
-                data_df=ts_data[ts_data['Stock']==ticker,:]
+                data_df=ts_data.loc[ts_data['Stock']==ticker,:]
                 batch_size=data_df.shape[0]
                 data_df=data_df.copy()
                 data_df['date']=data_df['timestamp'].apply(ftsepicker_lib.parse_date)
@@ -99,10 +99,10 @@ class ProcessEngine:
         return None
 
     def train_ml_predictor(self):
-        self.model.train_and_predict(self.x_data, self.y_data)
+        self.model.train_and_predict(self.x_data_oh, self.y_data)
         return None
 
-    def make_predictions(self, x_data, y_data):
+    def make_predictions(self, x_data):
         if self.model.is_calibrated==False:
             print('Must train model first')
             return None
