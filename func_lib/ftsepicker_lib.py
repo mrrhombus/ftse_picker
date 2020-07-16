@@ -98,11 +98,11 @@ def add_lag_returns(data_df):
     return data_df
 
 class ZScoreMapper:
-    def __init__(samples):
-        self.samples
+    def __init__(self, samples):
+        self.samples=samples
         return
     
-    def calc_norm_params():
+    def calc_norm_params(self):
         return
 
 def replace_catcols_oh(x_df, oh_cols):
