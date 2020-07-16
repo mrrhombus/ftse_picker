@@ -15,8 +15,9 @@ data_filepath=os.path.join(data_folder,'timesseriesdata.csv')
 sys.path.append(ROOT_DIR)
 from func_lib import process_engine
 
+api_key_file=os.path.join(data_folder, 'api_key.txt')
 
-api_key=r'3O7TSALOH8TXAHNM'
+api_key=open(api_key_file, 'r').readlines()[0]
 data_df_src=pd.read_csv(data_filepath)
 
 tickers=data_df_src['Stock'].unique()
