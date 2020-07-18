@@ -25,7 +25,7 @@ tickers=data_df_src['Stock'].unique()
 #%%
 
 analysis_run=process_engine.ProcessEngine()
-analysis_run.set_stock_universe(['VOD'])
+analysis_run.set_stock_universe(['VOD', 'FTAS'])
 analysis_run.download_data(api_key, 'full')
 analysis_run.process_data()
 
@@ -53,7 +53,26 @@ analysis_run.prepare_data_for_model(keep_cols, y_col, oh_cols)
 analysis_run.train_ml_predictor()
 predictions=analysis_run.make_predictions(analysis_run.x_data_oh)
 #%%
+temp_df=pd.DataFrame({'x':predictions,'y':analysis_run.y_data})
+investigate_df=analysis_run.x_data_oh.copy()
+investigate_df['y']=analysis_run.y_data
+investigate_df['prediction']=predictions
+from matplotlib import pyplot as plt
 
+plt.plot(investigate_df['prediction'],investigate_df['y'], linestyle='', marker='.')
+
+w=abs(investigate_df['prediction']+0.035)<0.005
+
+investigate_df_subset=investigate_df.loc[w,:]
+
+plt.plot(investigate_df.loc[w,'prediction'],
+         investigate_df.loc[w,'y'], linestyle='', marker='.')
+
+#%%
+train_predictions=analysis_run.make_predictions(analysis_run.model.x_train)
+plt.plot(train_predictions,analysis_run.model.y_train, linestyle='', marker='.')
+val_predictions=analysis_run.make_predictions(analysis_run.model.x_valid)
+plt.plot(val_predictions,analysis_run.model.y_val, linestyle='', marker='.')
 #%%
 data_df_processed=pd.read_csv(os.path.join(data_folder,'processed_data.csv'))
 

@@ -30,6 +30,14 @@ class ProcessEngine:
         self.timesseries_data=pd.read_csv(file_path)
         return None
     
+    def search_for_symbol(self, api_key, keyword):
+        url=r'https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={1}&apikey={0}&datatype=csv'.format(api_key,keyword)
+        r=requests.get(url)
+        time.sleep(1)
+        df=pd.read_csv(io.StringIO(r.content.decode('utf-8')))
+        return df
+        
+        
     def urlBuilder(self,ticker, api_key, size='full'):
         url=r'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={1}&outputsize={2}&apikey={0}&datatype=csv'.format(api_key,ticker, size)
         return url

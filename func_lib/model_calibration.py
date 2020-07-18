@@ -17,16 +17,16 @@ class ModelCalibration:
         return predictions
 
     def train_and_predict(self, x_data, y_data, max_leaf_nodes=100):
-        self.x_train, self.x_valid, self.train_y, self.val_y = train_test_split(x_data, y_data, random_state=1)
+        self.x_train, self.x_valid, self.y_train, self.y_val = train_test_split(x_data, y_data, random_state=1)
                 
         this_model = DecisionTreeRegressor(max_leaf_nodes=max_leaf_nodes, random_state=1)
-        this_model.fit(self.x_train, self.train_y)
+        this_model.fit(self.x_train, self.y_train)
         test_predictions=this_model.predict(self.x_train)
-        train_mae = mean_absolute_error(test_predictions, self.train_y)
+        train_mae = mean_absolute_error(test_predictions, self.y_train)
         print("Train MAE: {:,.5f}".format(100*train_mae))
 
         val_predictions = this_model.predict(self.x_valid)
-        val_mae = mean_absolute_error(val_predictions, self.val_y)
+        val_mae = mean_absolute_error(val_predictions, self.y_val)
         print("Validation MAE: {:,.5f}".format(100*val_mae))
 
         self.model=this_model
