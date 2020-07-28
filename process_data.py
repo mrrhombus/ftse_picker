@@ -21,11 +21,29 @@ api_key=open(api_key_file, 'r').readlines()[0]
 data_df_src=pd.read_csv(data_filepath)
 
 tickers=data_df_src['Stock'].unique()
-
+stock_universe=['SBRY',
+                'DGE',
+                'GAW',
+                'AVV',
+                'HSV',
+                'AVST',
+                'BIFF',
+                'TEP',
+                'AZN',
+                'SSE',
+                'KGF',
+                'TPK',
+                'ABF',
+                'BT.A',
+                'AAF',
+                'UU.',
+                'KNOS',
+                'OCDO',
+                'GLO']
 #%%
 
 analysis_run=process_engine.ProcessEngine()
-analysis_run.set_stock_universe(['VOD', 'FTAS'])
+analysis_run.set_stock_universe(stock_universe)
 analysis_run.download_data(api_key, 'full')
 analysis_run.process_data()
 
